@@ -1,0 +1,168 @@
+<!doctype>
+<html>
+
+<head><title>Box2dWeb Demo</title></head>
+
+<body onload="init();">
+	<canvas id="canvas" width="600" height="400" style="background-color:#333333;"></canvas>
+</body>
+
+<script src="box2d.js"></script>
+<script src="common.js"></script>
+
+<script>
+var isMouseDown = false;
+var id = null;
+
+function setupCanvas() {
+	var debugDraw = new b2DebugDraw();
+
+	debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
+	debugDraw.SetDrawScale(30.0);
+	debugDraw.SetFillAlpha(0.5);
+	debugDraw.SetLineThickness(1.0);
+	debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+
+	world.SetDebugDraw(debugDraw);
+}
+
+function init() {
+	setupWorld();
+	setupCanvas();
+
+	window.setInterval(update, 1000 / 60);
+
+	// mouse
+	var mouseX, mouseY, mousePVec, selectedBody, mouseJoint = false;
+	var canvasPosition = getElementPosition(document.getElementById("canvas"));
+		 
+	document.addEventListener("mousedown", function(e) {
+		isMouseDown = true;
+		handleMouseMove(e);
+		document.addEventListener("mousemove", handleMouseMove, true);
+	}, true);
+		 
+	document.addEventListener("mouseup", function() {
+		document.removeEventListener("mousemove", handleMouseMove, true);
+		isMouseDown = false;
+		mouseX = undefined;
+		mouseY = undefined;
+	}, true);
+		 
+	function handleMouseMove(e) {
+		mouseX = (e.clientX - canvasPosition.x) / 30;
+		mouseY = (e.clientY - canvasPosition.y) / 30;
+	};
+		 
+	function getBodyAtMouse() {
+		mousePVec = new b2Vec2(mouseX, mouseY);
+		var aabb = new b2AABB();
+		aabb.lowerBound.Set(mouseX - 0.001, mouseY - 0.001);
+		aabb.upperBound.Set(mouseX + 0.001, mouseY + 0.001);
+
+		// Query the world for overlapping shapes.
+
+		selectedBody = null;
+		world.QueryAABB(getBodyCB, aabb);
+		return selectedBody;
+	}
+
+	function getBodyCB(fixture) {
+		if(fixture.GetBody().GetType() != b2Body.b2_staticBody) {
+			if(fixture.GetShape().TestPoint(fixture.GetBody().GetTransform(), mousePVec)) {
+				selectedBody = fixture.GetBody();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	var body;
+
+	//update
+	function update() {
+		if (isMouseDown) {
+			if (!body) {
+				body = getBodyAtMouse();
+				if (body) mouseJoint = true;	
+			}
+
+			if (mouseJoint && (body != null)) {
+				var data = {"x": mouseX, "y": mouseY, "bodyId": body.GetUserData().bodyId};
+				data.id = id;
+				socket.send(data);
+			}
+		} else {
+			if (mouseJoint) {
+				var data = {"destroyId": id};
+				data.id = id;
+				socket.send(data);			
+			}
+
+			mouseJoint = false;
+			body = null;
+		}
+		 
+		world.Step(1 / 60, 10, 10);
+		world.DrawDebugData();
+		world.ClearForces();
+	}
+}
+         
+//helpers
+         
+//http://js-tut.aardon.de/js-tut/tutorial/position.html
+function getElementPosition(element) {
+	var elem = element, tagname = "", x = 0, y = 0;
+           
+	while((typeof(elem) == "object") && (typeof(elem.tagName) != "undefined")) {
+		y += elem.offsetTop;
+		x += elem.offsetLeft;
+
+		tagname = elem.tagName.toUpperCase();
+
+		if(tagname == "BODY") elem = 0;
+
+		if(typeof(elem) == "object") {
+			if(typeof(elem.offsetParent) == "object") elem = elem.offsetParent;
+		}
+
+		return {x: x, y: y};
+	}
+}
+</script>
+</html>
+
+<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script>
+var socket = new io.Socket('localhost', {port: xport});
+socket.connect();
+
+socket.on('connect',function() {
+	console.log('Client has connected to the server!');
+	connected = true;
+});
+
+socket.on('message', function(data) {
+
+	if (data.hasOwnProperty("startId")) {
+		id = data.startId;
+	}
+
+	if (data.hasOwnProperty('destroyId')) {
+		deleteJoint(data.destroyId);
+		return;	
+	}
+
+	if (data.hasOwnProperty('bodyId')) {
+		updateJoints(data);
+		return;	
+	}
+
+});
+
+socket.on('disconnect',function() {
+	console.log('The client has disconnected!');
+	connected = false;
+});
+</script>
