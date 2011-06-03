@@ -1,0 +1,6 @@
+Box2d.js is from http://code.google.com/p/box2dweb/
+
+How to use:
+Run "node app.js" and then open one or more windows with "demo.html".
+
+There is a bug, which causes out of sync, and I'll be glad if someone could help me to figure it out.
