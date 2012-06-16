@@ -1,7 +1,8 @@
 var bodiesNum = 3;
 var world;
 
-var xport = 2003;
+var xport = 8003;
+var xhost = 'real.fuuuuu.de';
 
 var syncTime = 1000 / 1;
 

@@ -90,13 +90,13 @@ function init() {
 			if (mouseJoint && (body != null)) {
 				var data = {"x": mouseX, "y": mouseY, "bodyId": body.GetUserData().bodyId};
 				data.id = id;
-				socket.send(data);
+				socket.send(JSON.stringify(data));
 			}
 		} else {
 			if (mouseJoint) {
 				var data = {"destroyId": id};
 				data.id = id;
-				socket.send(data);			
+				socket.send(JSON.stringify(data));			
 			}
 
 			mouseJoint = false;
@@ -133,10 +133,9 @@ function getElementPosition(element) {
 </script>
 </html>
 
-<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script src="http://fuuuuu.de:8003/socket.io/socket.io.js"></script>
 <script>
-var socket = new io.Socket('localhost', {port: xport});
-socket.connect();
+var socket = io.connect(xhost + ':' + xport);
 
 socket.on('connect',function() {
 	console.log('Client has connected to the server!');
@@ -144,7 +143,7 @@ socket.on('connect',function() {
 });
 
 socket.on('message', function(data) {
-
+	data = JSON.parse(data);
 	if (data.hasOwnProperty("startId")) {
 		id = data.startId;
 	}
