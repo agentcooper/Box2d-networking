@@ -1,4 +1,4 @@
-var http = require('http'), io = require('socket.io'), sys = require("sys"), fs = require('fs'), util = require('util');
+var http = require('http'), io = require('socket.io'), fs = require('fs');
 
 var Box2D = require('./box2d.js');
 
@@ -21,7 +21,7 @@ function jointsToClients(data) {
 setupWorld();
 
 // SOCKETS
-
+console.log("Starting socket server on port %d ...", xport);
 var server = http.createServer(
 	function(req, res){
 		res.writeHead(200, {'Content-Type': 'text/html'}); 
@@ -29,7 +29,6 @@ var server = http.createServer(
 	}
 );
 server.listen(xport, xhost);
-console.log(xport);
 var socket = io.listen(server);
 
 socket.on('connection', function(client) {
