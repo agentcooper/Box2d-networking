@@ -2,6 +2,7 @@ var bodiesNum = 3;
 var world;
 
 var xport = 2003;
+var xhost = '127.0.0.1';
 
 var syncTime = 1000 / 1;
 

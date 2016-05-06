@@ -1,6 +1,6 @@
-var http = require('http'), io = require('socket.io'), sys = require("sys"), fs = require('fs');
+var http = require('http'), io = require('socket.io'), fs = require('fs');
 
-var Box2D = require('/home/tema/Desktop/boxxy/box2d.js');
+var Box2D = require('./box2d.js');
 
 eval(fs.readFileSync('common.js') + '');
 
@@ -14,32 +14,31 @@ setInterval(update, 1000 / 60);
 
 function jointsToClients(data) {
 	for (var i = 0; i < clients.length; i++) {
-		clients[i].send(data);
+		clients[i].send(JSON.stringify(data));
 	}
 }
 
 setupWorld();
 
 // SOCKETS
-
+console.log("Starting socket server on port %d ...", xport);
 var server = http.createServer(
 	function(req, res){
 		res.writeHead(200, {'Content-Type': 'text/html'}); 
 		res.end('<h1>Hello world</h1>'); 
 	}
 );
-server.listen(xport, "127.0.0.1");
-
+server.listen(xport, xhost);
 var socket = io.listen(server);
 
 socket.on('connection', function(client) {
 	clients.push(client);
 	console.log("Total clients: " + clients.length);
 	
-	client.send({"startId" : clients.length});
+	client.send(JSON.stringify({"startId" : clients.length}));
 
 	client.on('message', function(data){
-
+		data = JSON.parse(data);
 		if (data.hasOwnProperty("destroyId")) {
 			deleteJoint(data.destroyId);
 			console.log('destroyed');		
